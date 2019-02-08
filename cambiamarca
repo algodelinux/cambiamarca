@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Esteban M. Navas <algodelinux@gmail.com>
+# Fecha creación: 08/07/2016
+# Última modificación: 07/02/2019
+
+SINCPUPPET=1
+PKGSYNC=1
+
+# Si no hay parámetros, el script se está usando de forma interactiva
+if [ -z "$1" ]; then
+
+   DIALOG="dialog"
+   tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+   trap "rm -f $tempfile" 0 1 2 5 15
+
+   $DIALOG --title "Marca del equipo" --clear \
+           --inputbox "Introduzca la marca que quiere asignar a este equipo [ ACER, APD, HP, Xtrem, ... ]:" 15 51 2> $tempfile
+
+   retval=$?
+
+   case $retval in
+     0)
+       MARCA=`cat $tempfile`
+     ;;
+     1) ;;
+   esac
+else
+   MARCA=$1
+fi
+
+
+if [ "$MARCA" ] ; then
+
+   grep -q '^marca=' /etc/escuela2.0 && sed -i "s/^marca=.*/marca=$MARCA/" /etc/escuela2.0 || echo "marca=$MARCA" >> /etc/escuela2.0
+
+   [ $SINCPUPPET -eq 1 ] && [ -x /usr/sbin/sinc_puppet ] && /usr/sbin/sinc_puppet -f now
+   [ $PKGSYNC -eq 1 ] && [ -x /usr/local/sbin/pkgsync ] && /usr/local/sbin/pkgsync -pcnf
+
+fi
